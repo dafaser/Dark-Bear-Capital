@@ -9,20 +9,23 @@ interface AnalyticsViewProps {
 }
 
 const AnalyticsView: React.FC<AnalyticsViewProps> = ({ positions, stats }) => {
-  const assetPerformance = positions
+  const assetPerformance = [...positions]
     .sort((a, b) => b.unrealizedPLPercent - a.unrealizedPLPercent)
     .map(p => ({
-      name: p.asset.symbol,
+      // Fix: PortfolioPosition has a flat structure; symbol is a direct property.
+      name: p.symbol,
       percent: p.unrealizedPLPercent,
       color: p.unrealizedPLPercent >= 0 ? '#10b981' : '#f43f5e'
     }));
 
   const allocationByClass = positions.reduce((acc, pos) => {
-    const existing = acc.find(a => a.name === pos.asset.assetClass);
+    // Fix: PortfolioPosition has a flat structure; assetClass is a direct property.
+    const existing = acc.find(a => a.name === pos.assetClass);
     if (existing) {
       existing.value += pos.marketValue;
     } else {
-      acc.push({ name: pos.asset.assetClass, value: pos.marketValue });
+      // Fix: PortfolioPosition has a flat structure; assetClass is a direct property.
+      acc.push({ name: pos.assetClass, value: pos.marketValue });
     }
     return acc;
   }, [] as { name: string; value: number }[]);

@@ -1,63 +1,55 @@
 
+import { GoogleGenAI } from "@google/genai";
 import { MarketData } from '../types';
 
+// Initialize the Gemini client using the mandatory apiKey configuration.
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+
 /**
- * Note: Real-world apps would use authenticated keys. 
- * These endpoints use public or demo-compatible interfaces where possible.
+ * Uses Gemini with Google Search to get real-time financial data.
+ * This acts as our "Google Finance API" proxy.
  */
-
-export const fetchStockPrices = async (symbols: string[]): Promise<Record<string, MarketData>> => {
-  // Mocking real-time stock data for demo purposes since free keys (AlphaVantage) are very restrictive
-  const data: Record<string, MarketData> = {};
-  symbols.forEach(symbol => {
-    data[symbol] = {
-      symbol,
-      price: Math.random() * 200 + 100,
-      change24h: (Math.random() - 0.5) * 5,
-      lastUpdated: new Date().toISOString()
-    };
-  });
-  return data;
-};
-
-export const fetchCryptoPrices = async (ids: string[]): Promise<Record<string, MarketData>> => {
+export const searchFinanceData = async (query: string): Promise<MarketData | null> => {
   try {
-    const response = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${ids.join(',')}&vs_currencies=usd&include_24hr_change=true`);
-    const json = await response.json();
-    
-    const data: Record<string, MarketData> = {};
-    Object.keys(json).forEach(id => {
-      const symbol = id.toUpperCase();
-      data[symbol] = {
-        symbol,
-        price: json[id].usd,
-        change24h: json[id].usd_24h_change,
-        lastUpdated: new Date().toISOString()
-      };
+    const response = await ai.models.generateContent({
+      model: "gemini-3-flash-preview",
+      contents: `Get the current price and 24h percentage change for ${query} from Google Finance. Return strictly a JSON object with keys: symbol, price_idr, change_percent. Example: {"symbol": "BBCA", "price_idr": 10200, "change_percent": 1.5}. If it's a US stock like AAPL, convert the price to IDR using current exchange rates.`,
+      config: {
+        tools: [{ googleSearch: {} }],
+        // Request JSON format for structured data parsing.
+        responseMimeType: "application/json"
+      },
     });
-    return data;
+
+    // Extract text using the direct .text property access.
+    const text = response.text || "{}";
+    const data = JSON.parse(text);
+    if (!data.price_idr) return null;
+
+    // Extract grounding chunks to comply with search grounding attribution requirements.
+    const chunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks || [];
+    const sources = chunks
+      .map((chunk: any) => chunk.web)
+      .filter(Boolean) as { uri: string; title: string }[];
+
+    return {
+      symbol: data.symbol || query.toUpperCase(),
+      price: data.price_idr,
+      change24h: data.change_percent || 0,
+      lastUpdated: new Date().toISOString(),
+      sources
+    };
   } catch (error) {
-    console.error('Crypto fetch failed', error);
-    return {};
+    console.error("Gemini search failed:", error);
+    return null;
   }
 };
 
-export const fetchGoldPrice = async (): Promise<MarketData> => {
-  // Metals-API usually requires keys. Using a fallback proxy or mock for the demo.
-  return {
-    symbol: 'GOLD',
-    price: 2650.50, // USD per oz
-    change24h: 0.45,
-    lastUpdated: new Date().toISOString()
-  };
-};
-
-export const fetchExchangeRate = async (): Promise<number> => {
-  try {
-    const response = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
-    const json = await response.json();
-    return json.rates.IDR;
-  } catch (error) {
-    return 15850; // Fallback
+export const fetchMultiplePrices = async (symbols: string[]): Promise<Record<string, MarketData>> => {
+  const results: Record<string, MarketData> = {};
+  for (const sym of symbols) {
+    const data = await searchFinanceData(sym);
+    if (data) results[sym] = data;
   }
+  return results;
 };

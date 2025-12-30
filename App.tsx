@@ -1,9 +1,8 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { Asset, Transaction, MarketData, PortfolioPosition, GlobalStats } from './types';
-import { INITIAL_ASSETS } from './constants';
+import { Transaction, MarketData, PortfolioPosition, GlobalStats } from './types';
 import { calculatePositions } from './services/calculations';
-import { fetchStockPrices, fetchCryptoPrices, fetchGoldPrice, fetchExchangeRate } from './services/api';
+import { fetchMultiplePrices } from './services/api';
 
 import Sidebar from './components/Sidebar';
 import DashboardView from './views/DashboardView';
@@ -19,52 +18,39 @@ const App: React.FC = () => {
     return saved ? JSON.parse(saved) : [];
   });
   const [marketData, setMarketData] = useState<Record<string, MarketData>>({});
-  const [idrRate, setIdrRate] = useState<number>(15800);
   const [isPrivacyMode, setIsPrivacyMode] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Sync transactions to localStorage
   useEffect(() => {
     localStorage.setItem('dark_bear_transactions', JSON.stringify(transactions));
   }, [transactions]);
 
-  // Fetch prices
-  const refreshData = async () => {
-    const stockSymbols = INITIAL_ASSETS.filter(a => a.assetClass === 'STOCK').map(a => a.symbol);
-    const cryptoIds = ['bitcoin']; // mapping for coingecko
+  const refreshPortfolioPrices = async () => {
+    const symbolsToFetch = Array.from(new Set(transactions.map(t => t.symbol))) as string[];
+    if (symbolsToFetch.length === 0) return;
     
-    const [stocks, crypto, gold, rate] = await Promise.all([
-      fetchStockPrices(stockSymbols),
-      fetchCryptoPrices(cryptoIds),
-      fetchGoldPrice(),
-      fetchExchangeRate()
-    ]);
-
-    setMarketData({
-      ...stocks,
-      ...crypto,
-      GOLD: gold
-    });
-    setIdrRate(rate);
+    setIsLoading(true);
+    const data = await fetchMultiplePrices(symbolsToFetch);
+    setMarketData(prev => ({ ...prev, ...data }));
+    setIsLoading(false);
   };
 
   useEffect(() => {
-    refreshData();
-    const interval = setInterval(refreshData, 60000); // refresh every minute
+    refreshPortfolioPrices();
+    const interval = setInterval(refreshPortfolioPrices, 300000); // 5 mins
     return () => clearInterval(interval);
-  }, []);
+  }, [transactions.length]);
 
   const positions = useMemo(() => 
-    calculatePositions(INITIAL_ASSETS, transactions, marketData),
+    calculatePositions(transactions, marketData),
   [transactions, marketData]);
 
   const stats: GlobalStats = useMemo(() => {
     const totalValue = positions.reduce((sum, p) => sum + p.marketValue, 0);
     const totalInvested = positions.reduce((sum, p) => sum + (p.quantity * p.averageBuyPrice), 0);
     const allTimePL = totalValue - totalInvested;
-    
-    // Simplified today's PL based on current market change %
     const todayPL = positions.reduce((sum, p) => {
-      const change = marketData[p.asset.symbol]?.change24h || 0;
+      const change = marketData[p.symbol]?.change24h || 0;
       return sum + (p.marketValue * (change / 100));
     }, 0);
 
@@ -78,14 +64,6 @@ const App: React.FC = () => {
     };
   }, [positions, marketData]);
 
-  const handleAddTransaction = (tx: Transaction) => {
-    setTransactions(prev => [tx, ...prev]);
-  };
-
-  const handleDeleteTransaction = (id: string) => {
-    setTransactions(prev => prev.filter(t => t.id !== id));
-  };
-
   return (
     <div className="flex min-h-screen bg-[#0a0a0b] text-[#e4e4e7]">
       <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
@@ -93,9 +71,12 @@ const App: React.FC = () => {
       <main className="flex-1 ml-64 p-8 overflow-y-auto">
         <header className="flex justify-between items-center mb-10">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-white uppercase letter-spacing-wide">
-              {activeTab === 'dashboard' ? 'Market Overview' : activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}
-            </h1>
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-bold tracking-tight text-white uppercase letter-spacing-wide">
+                {activeTab === 'dashboard' ? 'Portfolio Overview' : activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}
+              </h1>
+              {isLoading && <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></div>}
+            </div>
             <p className="text-sm text-zinc-500 mt-1">
               {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
             </p>
@@ -110,32 +91,23 @@ const App: React.FC = () => {
             </button>
             <div className="h-4 w-px bg-zinc-800"></div>
             <div className="flex flex-col items-end">
-              <span className="text-xs text-zinc-500 uppercase font-bold tracking-widest">USD/IDR</span>
-              <span className="text-sm font-medium text-white mono">{idrRate.toLocaleString()}</span>
+              <span className="text-xs text-zinc-500 uppercase font-bold tracking-widest">Base Currency</span>
+              <span className="text-sm font-medium text-white mono">IDR (Rupiah)</span>
             </div>
           </div>
         </header>
 
-        {activeTab === 'dashboard' && (
-          <DashboardView stats={stats} positions={positions} isPrivacyMode={isPrivacyMode} />
-        )}
-        {activeTab === 'portfolio' && (
-          <PortfolioView positions={positions} idrRate={idrRate} isPrivacyMode={isPrivacyMode} />
-        )}
-        {activeTab === 'watchlist' && (
-          <WatchlistView marketData={marketData} />
-        )}
+        {activeTab === 'dashboard' && <DashboardView stats={stats} positions={positions} isPrivacyMode={isPrivacyMode} />}
+        {activeTab === 'portfolio' && <PortfolioView positions={positions} isPrivacyMode={isPrivacyMode} />}
+        {activeTab === 'watchlist' && <WatchlistView marketData={marketData} />}
         {activeTab === 'journal' && (
           <JournalView 
             transactions={transactions} 
-            assets={INITIAL_ASSETS} 
-            onAdd={handleAddTransaction} 
-            onDelete={handleDeleteTransaction}
+            onAdd={(tx) => setTransactions(prev => [tx, ...prev])} 
+            onDelete={(id) => setTransactions(prev => prev.filter(t => t.id !== id))}
           />
         )}
-        {activeTab === 'analytics' && (
-          <AnalyticsView positions={positions} stats={stats} />
-        )}
+        {activeTab === 'analytics' && <AnalyticsView positions={positions} stats={stats} />}
       </main>
     </div>
   );
