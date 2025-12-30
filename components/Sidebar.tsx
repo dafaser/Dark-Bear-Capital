@@ -10,37 +10,37 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange }) => {
     { 
       id: 'dashboard', 
       label: 'Overview', 
-      icon: <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /> 
+      icon: <React.Fragment><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /></React.Fragment> 
     },
     { 
       id: 'portfolio', 
       label: 'Portfolio', 
-      icon: <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" /> 
+      icon: <React.Fragment><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" /></React.Fragment> 
     },
     { 
       id: 'watchlist', 
       label: 'Watchlist', 
-      icon: <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2zM22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" /> 
+      icon: <React.Fragment><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2zM22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" /></React.Fragment> 
     },
     { 
       id: 'journal', 
       label: 'Journal', 
       icon: (
-        <g>
+        <React.Fragment>
           <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
           <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-        </g>
+        </React.Fragment>
       )
     },
     { 
       id: 'analytics', 
       label: 'Analytics', 
       icon: (
-        <g>
+        <React.Fragment>
           <path d="M18 20V10" />
           <path d="M12 20V4" />
           <path d="M6 20v-6" />
-        </g>
+        </React.Fragment>
       )
     },
   ];
