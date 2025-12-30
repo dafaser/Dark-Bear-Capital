@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Transaction, TransactionType } from '../types';
 import { searchFinanceData } from '../services/api';
@@ -116,11 +115,13 @@ const JournalView: React.FC<JournalViewProps> = ({ transactions, onAdd, onDelete
                 </div>
                 <div>
                   <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">Quantity</label>
-                  <input type="number" step="any" className="w-full bg-black border border-zinc-800 rounded p-3 text-sm text-white mono" value={newTx.quantity} onChange={e => setNewTx({...newTx, quantity: e.target.value})} required />
+                  {/* Fixed Type Error: Convert input string to number */}
+                  <input type="number" step="any" className="w-full bg-black border border-zinc-800 rounded p-3 text-sm text-white mono" value={newTx.quantity} onChange={e => setNewTx({...newTx, quantity: Number(e.target.value)})} required />
                 </div>
                 <div>
                   <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">Execution Price (Rp)</label>
-                  <input type="number" step="any" className="w-full bg-black border border-zinc-800 rounded p-3 text-sm text-white mono" value={newTx.price} onChange={e => setNewTx({...newTx, price: e.target.value})} required />
+                  {/* Fixed Type Error: Convert input string to number */}
+                  <input type="number" step="any" className="w-full bg-black border border-zinc-800 rounded p-3 text-sm text-white mono" value={newTx.price} onChange={e => setNewTx({...newTx, price: Number(e.target.value)})} required />
                 </div>
                 <div className="md:col-span-2">
                   <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">Notes</label>

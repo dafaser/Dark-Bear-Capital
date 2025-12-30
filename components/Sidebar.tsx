@@ -1,13 +1,12 @@
-
 import React from 'react';
 
 interface SidebarProps {
-  activeTab: string;
-  onTabChange: (tab: any) => void;
+  activeTab: 'dashboard' | 'portfolio' | 'watchlist' | 'journal' | 'analytics';
+  onTabChange: (tab: 'dashboard' | 'portfolio' | 'watchlist' | 'journal' | 'analytics') => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange }) => {
-  const menuItems = [
+  const menuItems: { id: 'dashboard' | 'portfolio' | 'watchlist' | 'journal' | 'analytics'; label: string; icon: React.ReactNode }[] = [
     { id: 'dashboard', label: 'Overview', icon: <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /> },
     { id: 'portfolio', label: 'Portfolio', icon: <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" /> },
     { id: 'watchlist', label: 'Watchlist', icon: <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2zM22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" /> },
