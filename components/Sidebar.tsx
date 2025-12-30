@@ -1,12 +1,12 @@
 import React from 'react';
 
 interface SidebarProps {
-  activeTab: 'dashboard' | 'portfolio' | 'watchlist' | 'journal' | 'analytics';
-  onTabChange: (tab: 'dashboard' | 'portfolio' | 'watchlist' | 'journal' | 'analytics') => void;
+  activeTab: 'dashboard' | 'portfolio' | 'watchlist' | 'journal';
+  onTabChange: (tab: 'dashboard' | 'portfolio' | 'watchlist' | 'journal') => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange }) => {
-  const menuItems: { id: 'dashboard' | 'portfolio' | 'watchlist' | 'journal' | 'analytics'; label: string; icon: React.ReactNode }[] = [
+  const menuItems: { id: 'dashboard' | 'portfolio' | 'watchlist' | 'journal'; label: string; icon: React.ReactNode }[] = [
     { 
       id: 'dashboard', 
       label: 'Overview', 
@@ -29,17 +29,6 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange }) => {
         <React.Fragment>
           <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
           <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-        </React.Fragment>
-      )
-    },
-    { 
-      id: 'analytics', 
-      label: 'Analytics', 
-      icon: (
-        <React.Fragment>
-          <path d="M18 20V10" />
-          <path d="M12 20V4" />
-          <path d="M6 20v-6" />
         </React.Fragment>
       )
     },

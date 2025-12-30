@@ -4,18 +4,17 @@ import { USD_IDR_ESTIMATE } from '../constants';
 
 /**
  * Uses Gemini with Google Search to get real-time financial data.
- * Optimized for Treasury.id and Indonesian local gold prices.
+ * Optimized for High Precision (Google Finance / official sources).
  */
 export const searchFinanceData = async (query: string): Promise<MarketData | null> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
-  // Detect if query is gold-related
   const isGold = /gold|emas|antam|treasury|ubs/i.test(query);
   
-  // Specific prompt for Indonesian Gold (Treasury focus)
+  // Specific instruction to prioritize Google Finance or official market data sources
   const searchPrompt = isGold 
-    ? `Cari harga beli/investasi emas hari ini per 1 gram di platform Treasury.id atau harga emas Antam terbaru di Indonesia dalam Rupiah (IDR). Harga biasanya berada di rentang Rp1.400.000 hingga Rp2.500.000 per gram.`
-    : `Perform a Google Search for the current market price and 24h change of: ${query}. Use ${USD_IDR_ESTIMATE} as USD/IDR rate if the source data is in USD.`;
+    ? `Cari harga BELI emas hari ini per 1 gram di Treasury.id atau harga emas Antam terbaru di LogamMulia.com dalam Rupiah (IDR). Harus harga beli terbaru, bukan harga buyback.`
+    : `Find the precise current market price and 24h change for "${query}" using Google Finance, Yahoo Finance, or official stock exchange data. If the asset is on IDX (Indonesian Stock Exchange), find its current price in IDR. Use ${USD_IDR_ESTIMATE} as the conversion rate ONLY if the asset is strictly priced in USD.`;
 
   try {
     const response = await ai.models.generateContent({
@@ -23,11 +22,11 @@ export const searchFinanceData = async (query: string): Promise<MarketData | nul
       contents: `${searchPrompt}
       
       CRITICAL INSTRUCTIONS:
-      1. For Gold: You MUST find the price per ONE GRAM in IDR (Indonesian Rupiah).
-      2. If searching for "Treasury", find the specific price on Treasury.id.
+      1. Priority Source: GOOGLE FINANCE knowledge graph.
+      2. For Gold: Price per ONE GRAM in IDR (must be between 1,000,000 and 2,500,000).
       3. Format response EXACTLY as: "SYMBOL: [sym], PRICE_IDR: [val], CHANGE_PERCENT: [val]".
       4. PRICE_IDR must be a pure number without any dots, commas, or "Rp" (e.g., 2441575).
-      5. If CHANGE_PERCENT is not available, use 0.`,
+      5. If CHANGE_PERCENT is not found, use 0.`,
       config: {
         tools: [{ googleSearch: {} }]
       },
@@ -35,7 +34,6 @@ export const searchFinanceData = async (query: string): Promise<MarketData | nul
 
     const text = response.text || "";
     
-    // Improved regex to capture symbol, price, and change percentage
     const priceMatch = text.match(/PRICE_IDR:?\s*([\d,.]+)/i);
     const changeMatch = text.match(/CHANGE_PERCENT:?\s*([+-]?[\d,.]+)/i);
     const symbolMatch = text.match(/SYMBOL:?\s*([A-Z0-9.]+)/i);
@@ -45,12 +43,9 @@ export const searchFinanceData = async (query: string): Promise<MarketData | nul
       return null;
     }
 
-    // Clean price: remove any non-digit characters (in case Gemini included dots/commas)
     const rawPriceStr = priceMatch[1].replace(/[^\d]/g, ''); 
     const price = parseFloat(rawPriceStr);
     const change = changeMatch ? parseFloat(changeMatch[1]) : 0;
-    
-    // Use query as symbol if model fails to provide one
     const symbol = symbolMatch ? symbolMatch[1].trim() : query.toUpperCase();
 
     const chunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks || [];
@@ -76,7 +71,6 @@ export const fetchMultiplePrices = async (symbols: string[]): Promise<Record<str
   for (const sym of symbols) {
     const data = await searchFinanceData(sym);
     if (data) results[sym] = data;
-    // Delay to prevent hitting free-tier search limits
     await new Promise(resolve => setTimeout(resolve, 850));
   }
   return results;

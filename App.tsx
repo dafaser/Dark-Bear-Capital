@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Transaction, MarketData, PortfolioPosition, GlobalStats } from './types';
+import { Transaction, MarketData, GlobalStats } from './types';
 import { calculatePositions } from './services/calculations';
 import { fetchMultiplePrices } from './services/api';
 
@@ -8,10 +8,9 @@ import DashboardView from './views/DashboardView';
 import PortfolioView from './views/PortfolioView';
 import WatchlistView from './views/WatchlistView';
 import JournalView from './views/JournalView';
-import AnalyticsView from './views/AnalyticsView';
 
 const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'portfolio' | 'watchlist' | 'journal' | 'analytics'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'portfolio' | 'watchlist' | 'journal'>('dashboard');
   const [transactions, setTransactions] = useState<Transaction[]>(() => {
     const saved = localStorage.getItem('dark_bear_transactions');
     return saved ? JSON.parse(saved) : [];
@@ -41,7 +40,6 @@ const App: React.FC = () => {
     }
   };
 
-  // Auto-refresh when transactions change or on mount
   useEffect(() => {
     refreshPortfolioPrices();
     const interval = setInterval(refreshPortfolioPrices, 300000); // 5 mins
@@ -71,9 +69,21 @@ const App: React.FC = () => {
     };
   }, [positions, marketData]);
 
+  const addTransaction = (tx: Transaction) => {
+    setTransactions(prev => [tx, ...prev]);
+  };
+
+  const updateTransaction = (updatedTx: Transaction) => {
+    setTransactions(prev => prev.map(tx => tx.id === updatedTx.id ? updatedTx : tx));
+  };
+
+  const deleteTransaction = (id: string) => {
+    setTransactions(prev => prev.filter(t => t.id !== id));
+  };
+
   return (
     <div className="flex min-h-screen bg-[#0a0a0b] text-[#e4e4e7]">
-      <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
+      <Sidebar activeTab={activeTab} onTabChange={(tab) => setActiveTab(tab as any)} />
       
       <main className="flex-1 ml-64 p-8 overflow-y-auto">
         <header className="flex justify-between items-center mb-10">
@@ -135,11 +145,11 @@ const App: React.FC = () => {
         {activeTab === 'journal' && (
           <JournalView 
             transactions={transactions} 
-            onAdd={(tx) => setTransactions(prev => [tx, ...prev])} 
-            onDelete={(id) => setTransactions(prev => prev.filter(t => t.id !== id))}
+            onAdd={addTransaction}
+            onUpdate={updateTransaction}
+            onDelete={deleteTransaction}
           />
         )}
-        {activeTab === 'analytics' && <AnalyticsView positions={positions} stats={stats} />}
       </main>
     </div>
   );
