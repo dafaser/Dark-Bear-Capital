@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MarketData, WatchlistItem } from '../types';
+import { MarketData, WatchlistItem, AssetClass } from '../types';
 import { searchFinanceData } from '../services/api';
 
 const formatIDR = (val: number) => {
@@ -48,13 +48,15 @@ const WatchlistView: React.FC<{ marketData: Record<string, MarketData> }> = () =
     }
   };
 
+  const isGoldSymbol = (sym: string) => /gold|emas|antam|treasury|ubs/i.test(sym);
+
   return (
     <div className="space-y-8">
       <div className="max-w-2xl mx-auto">
         <form onSubmit={handleSearch} className="relative group">
           <input 
             type="text" 
-            placeholder="Search Stocks, Crypto, or Gold (e.g., BBCA, BTC, Gold)..."
+            placeholder="Search: 'Treasury Gold', 'BTC', 'BBCA'..."
             className="w-full bg-zinc-900 border border-zinc-800 rounded-xl py-4 px-6 text-white focus:outline-none focus:ring-1 focus:ring-amber-500 transition-all pl-14"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -68,18 +70,23 @@ const WatchlistView: React.FC<{ marketData: Record<string, MarketData> }> = () =
             {searchStatus === 'idle' ? 'Search' : searchStatus === 'searching' ? 'Fetching...' : 'Verifying...'}
           </button>
         </form>
-        <p className="mt-2 text-[9px] text-zinc-600 text-center italic tracking-wider">Note: Searching uses real-time web grounding which requires a few moments for verification.</p>
+        <p className="mt-2 text-[9px] text-zinc-600 text-center italic tracking-wider uppercase">Institutional-grade data sourcing via Web Grounding.</p>
 
         {searchResult && (
           <div className="mt-4 bg-zinc-900/80 border border-zinc-800 rounded-xl p-6 animate-in slide-in-from-top-2">
             <div className="flex justify-between items-center mb-4">
               <div>
-                <h3 className="text-xl font-bold text-white tracking-tighter">{searchResult.symbol}</h3>
-                <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Real-time Data (IDR)</p>
+                <h3 className="text-xl font-bold text-white tracking-tighter uppercase">{searchResult.symbol}</h3>
+                <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">
+                  {isGoldSymbol(searchResult.symbol) ? 'Price per Gram (IDR)' : 'Real-time Data (IDR)'}
+                </p>
               </div>
               <div className="text-right flex items-center gap-4">
                 <div>
-                  <div className="text-xl font-bold text-white mono">{formatIDR(searchResult.price)}</div>
+                  <div className="text-xl font-bold text-white mono">
+                    {formatIDR(searchResult.price)}
+                    {isGoldSymbol(searchResult.symbol) && <span className="text-[10px] ml-1 text-zinc-500">/gr</span>}
+                  </div>
                   <div className={`text-[10px] font-black ${searchResult.change24h >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
                     {searchResult.change24h >= 0 ? '+' : ''}{searchResult.change24h.toFixed(2)}%
                   </div>
@@ -95,7 +102,7 @@ const WatchlistView: React.FC<{ marketData: Record<string, MarketData> }> = () =
 
             {searchResult.sources && searchResult.sources.length > 0 && (
               <div className="mt-4 pt-4 border-t border-zinc-800">
-                <p className="text-[10px] font-bold text-zinc-600 uppercase mb-2">Sources:</p>
+                <p className="text-[10px] font-bold text-zinc-600 uppercase mb-2">Verified Sources:</p>
                 <div className="flex flex-wrap gap-2">
                   {searchResult.sources.map((source, i) => (
                     <a 
@@ -105,7 +112,7 @@ const WatchlistView: React.FC<{ marketData: Record<string, MarketData> }> = () =
                       rel="noopener noreferrer" 
                       className="text-[9px] text-amber-500/70 hover:text-amber-500 underline truncate max-w-[200px]"
                     >
-                      {source.title || 'Market Info'}
+                      {source.title || 'Market Source'}
                     </a>
                   ))}
                 </div>
@@ -118,15 +125,15 @@ const WatchlistView: React.FC<{ marketData: Record<string, MarketData> }> = () =
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {watchlist.length === 0 ? (
           <div className="col-span-full py-20 text-center border-2 border-dashed border-zinc-900 rounded-2xl">
-            <p className="text-zinc-600 text-sm italic">Watchlist is empty. Search for assets above and click the star to track them.</p>
+            <p className="text-zinc-600 text-sm italic">Watchlist is empty. Search for 'Treasury Gold' or tickers to begin tracking.</p>
           </div>
         ) : (
           watchlist.map(item => (
             <div key={item.symbol} className="bg-zinc-900/30 border border-zinc-800 rounded-xl p-6 hover:bg-zinc-900/50 transition-all group">
               <div className="flex justify-between items-start mb-6">
                 <div>
-                  <h4 className="text-xl font-bold text-white tracking-tight">{item.symbol}</h4>
-                  <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Saved Tracker</p>
+                  <h4 className="text-xl font-bold text-white tracking-tight uppercase">{item.symbol}</h4>
+                  <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Saved Asset</p>
                 </div>
                 <button 
                   onClick={() => setWatchlist(prev => prev.filter(w => w.symbol !== item.symbol))}
@@ -135,20 +142,23 @@ const WatchlistView: React.FC<{ marketData: Record<string, MarketData> }> = () =
                   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>
                 </button>
               </div>
-              <div className="text-2xl font-semibold text-white mono mb-2">{formatIDR(item.price)}</div>
+              <div className="text-2xl font-semibold text-white mono mb-2">
+                {formatIDR(item.price)}
+                {isGoldSymbol(item.symbol) && <span className="text-xs ml-1 text-zinc-500">/gr</span>}
+              </div>
               
               {item.sources && item.sources.length > 0 && (
                 <div className="mt-2 flex flex-wrap gap-1">
-                  {item.sources.slice(0, 2).map((s, idx) => (
-                    <span key={idx} className="text-[8px] text-zinc-600 bg-zinc-800 px-1 rounded truncate max-w-[80px]">
-                      {s.title}
+                  {item.sources.slice(0, 1).map((s, idx) => (
+                    <span key={idx} className="text-[8px] text-zinc-600 bg-zinc-800 px-1.5 py-0.5 rounded truncate max-w-[120px]">
+                      Source: {s.title}
                     </span>
                   ))}
                 </div>
               )}
 
               <div className="h-1 bg-zinc-800 rounded-full overflow-hidden mt-4">
-                <div className="h-full bg-amber-500 w-1/2"></div>
+                <div className="h-full bg-amber-500/40 w-full animate-pulse"></div>
               </div>
             </div>
           ))

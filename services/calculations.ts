@@ -1,4 +1,3 @@
-
 import { Transaction, TransactionType, PortfolioPosition, MarketData, AssetClass } from '../types';
 
 export const calculatePositions = (
@@ -8,17 +7,30 @@ export const calculatePositions = (
   const symbolStats: Record<string, { qty: number; totalCost: number; name: string; class: AssetClass }> = {};
 
   transactions.forEach(tx => {
+    const sym = tx.symbol.toUpperCase();
     if (!symbolStats[tx.symbol]) {
-      symbolStats[tx.symbol] = { qty: 0, totalCost: 0, name: tx.name, class: AssetClass.STOCK }; // Default to stock for search results
+      // Logic to determine Asset Class based on symbol
+      let assetClass = AssetClass.STOCK;
+      
+      if (sym.includes('BTC') || sym.includes('ETH') || sym.includes('SOL') || sym.includes('BNB')) {
+        assetClass = AssetClass.CRYPTO;
+      } else if (sym.includes('GOLD') || sym.includes('ANTM') || sym.includes('EMAS') || sym.includes('TREASURY') || sym.includes('UBS')) {
+        assetClass = AssetClass.GOLD;
+      }
+
+      symbolStats[tx.symbol] = { qty: 0, totalCost: 0, name: tx.name, class: assetClass };
     }
 
     if (tx.type === TransactionType.BUY) {
       symbolStats[tx.symbol].qty += tx.quantity;
       symbolStats[tx.symbol].totalCost += tx.quantity * tx.price;
     } else {
-      const avgPrice = symbolStats[tx.symbol].totalCost / symbolStats[tx.symbol].qty;
-      symbolStats[tx.symbol].qty -= tx.quantity;
-      symbolStats[tx.symbol].totalCost -= tx.quantity * avgPrice;
+      const currentQty = symbolStats[tx.symbol].qty;
+      if (currentQty > 0) {
+        const avgPrice = symbolStats[tx.symbol].totalCost / currentQty;
+        symbolStats[tx.symbol].qty -= tx.quantity;
+        symbolStats[tx.symbol].totalCost -= tx.quantity * avgPrice;
+      }
     }
   });
 
@@ -32,10 +44,10 @@ export const calculatePositions = (
       const unrealizedPL = marketValue - totalCost;
       const avgBuyPrice = totalCost / stat.qty;
 
-      // Simple color logic based on asset name/symbol
-      let color = '#3b82f6';
-      if (sym.includes('BTC') || sym.includes('ETH')) color = '#f97316';
-      if (sym.includes('GOLD') || sym.includes('ANTM')) color = '#fbbf24';
+      // Consistent Institutional Color Scheme
+      let color = '#3b82f6'; // Stocks (Blue)
+      if (stat.class === AssetClass.CRYPTO) color = '#f97316'; // Crypto (Orange)
+      if (stat.class === AssetClass.GOLD) color = '#fbbf24'; // Gold (Amber)
 
       return {
         symbol: sym,

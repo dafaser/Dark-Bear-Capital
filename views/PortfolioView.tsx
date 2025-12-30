@@ -1,6 +1,5 @@
-
 import React from 'react';
-import { PortfolioPosition } from '../types';
+import { PortfolioPosition, AssetClass } from '../types';
 
 interface PortfolioViewProps {
   positions: PortfolioPosition[];
@@ -29,46 +28,53 @@ const PortfolioView: React.FC<PortfolioViewProps> = ({ positions, isPrivacyMode 
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-800">
-              {positions.map((pos, idx) => (
-                <tr key={idx} className="hover:bg-zinc-800/30 transition-colors group">
-                  <td className="px-6 py-5">
-                    <div className="flex items-center gap-3">
-                      <div className="w-1.5 h-6 rounded-full" style={{backgroundColor: pos.color}}></div>
-                      <div>
-                        <div className="text-sm font-semibold text-white tracking-tight">{pos.symbol}</div>
-                        <div className="text-[10px] text-zinc-500 font-medium uppercase">{pos.name}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-5 text-right font-medium text-white mono text-sm">
-                    {isPrivacyMode ? '••••' : pos.quantity.toLocaleString()}
-                  </td>
-                  <td className="px-6 py-5 text-right font-medium text-zinc-400 mono text-sm">
-                    {isPrivacyMode ? '••••' : formatIDR(pos.averageBuyPrice)}
-                  </td>
-                  <td className="px-6 py-5 text-right font-medium text-white mono text-sm">
-                    {isPrivacyMode ? '••••' : formatIDR(pos.currentPrice)}
-                  </td>
-                  <td className="px-6 py-5 text-right">
-                    <div className="text-sm font-semibold text-white mono">
-                      {isPrivacyMode ? '••••' : formatIDR(pos.marketValue)}
-                    </div>
-                  </td>
-                  <td className="px-6 py-5 text-right">
-                    <div className={`text-sm font-semibold mono ${pos.unrealizedPL >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                      {isPrivacyMode ? '••••' : `${pos.unrealizedPL >= 0 ? '+' : ''}${formatIDR(pos.unrealizedPL)}`}
-                    </div>
-                    <div className={`text-[10px] font-bold ${pos.unrealizedPL >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
-                      {isPrivacyMode ? '•••' : `${pos.unrealizedPLPercent.toFixed(2)}%`}
-                    </div>
-                  </td>
-                  <td className="px-6 py-5 text-right">
-                    <div className="text-[10px] font-bold text-zinc-500 mono">
-                      {pos.allocationPercent.toFixed(1)}%
-                    </div>
-                  </td>
+              {positions.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="px-6 py-20 text-center text-zinc-600 italic text-sm">No active positions. Log transactions in the Journal to build your portfolio.</td>
                 </tr>
-              ))}
+              ) : (
+                positions.map((pos, idx) => (
+                  <tr key={idx} className="hover:bg-zinc-800/30 transition-colors group">
+                    <td className="px-6 py-5">
+                      <div className="flex items-center gap-3">
+                        <div className="w-1.5 h-6 rounded-full" style={{backgroundColor: pos.color}}></div>
+                        <div>
+                          <div className="text-sm font-semibold text-white tracking-tight">{pos.symbol}</div>
+                          <div className="text-[10px] text-zinc-500 font-medium uppercase">{pos.assetClass}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-5 text-right font-medium text-white mono text-sm">
+                      {isPrivacyMode ? '••••' : pos.quantity.toLocaleString()}
+                      {!isPrivacyMode && pos.assetClass === AssetClass.GOLD && <span className="text-[10px] text-zinc-500 ml-1 font-bold">gr</span>}
+                    </td>
+                    <td className="px-6 py-5 text-right font-medium text-zinc-400 mono text-sm">
+                      {isPrivacyMode ? '••••' : formatIDR(pos.averageBuyPrice)}
+                    </td>
+                    <td className="px-6 py-5 text-right font-medium text-white mono text-sm">
+                      {isPrivacyMode ? '••••' : formatIDR(pos.currentPrice)}
+                    </td>
+                    <td className="px-6 py-5 text-right">
+                      <div className="text-sm font-semibold text-white mono">
+                        {isPrivacyMode ? '••••' : formatIDR(pos.marketValue)}
+                      </div>
+                    </td>
+                    <td className="px-6 py-5 text-right">
+                      <div className={`text-sm font-semibold mono ${pos.unrealizedPL >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                        {isPrivacyMode ? '••••' : `${pos.unrealizedPL >= 0 ? '+' : ''}${formatIDR(pos.unrealizedPL)}`}
+                      </div>
+                      <div className={`text-[10px] font-bold ${pos.unrealizedPL >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
+                        {isPrivacyMode ? '•••' : `${pos.unrealizedPLPercent.toFixed(2)}%`}
+                      </div>
+                    </td>
+                    <td className="px-6 py-5 text-right">
+                      <div className="text-[10px] font-bold text-zinc-500 mono">
+                        {pos.allocationPercent.toFixed(1)}%
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
