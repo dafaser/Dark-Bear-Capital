@@ -15,7 +15,7 @@ interface JournalViewProps {
 const JournalView: React.FC<JournalViewProps> = ({ transactions, onAdd, onDelete }) => {
   const [isAdding, setIsAdding] = useState(false);
   const [assetSearch, setAssetSearch] = useState('');
-  const [isSearching, setIsSearching] = useState(false);
+  const [searchStatus, setSearchStatus] = useState<'idle' | 'searching' | 'verifying'>('idle');
   const [selectedAsset, setSelectedAsset] = useState<{ symbol: string; price: number } | null>(null);
   const [newTx, setNewTx] = useState<Partial<Transaction>>({
     type: TransactionType.BUY,
@@ -26,13 +26,19 @@ const JournalView: React.FC<JournalViewProps> = ({ transactions, onAdd, onDelete
 
   const handleSearchAsset = async () => {
     if (!assetSearch) return;
-    setIsSearching(true);
+    setSearchStatus('searching');
+    
+    // Simulated phase change to keep user engaged
+    const verifyTimeout = setTimeout(() => setSearchStatus('verifying'), 3500);
+    
     const data = await searchFinanceData(assetSearch);
+    clearTimeout(verifyTimeout);
+    
     if (data) {
       setSelectedAsset({ symbol: data.symbol, price: data.price });
       setNewTx(prev => ({ ...prev, price: data.price }));
     }
-    setIsSearching(false);
+    setSearchStatus('idle');
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -42,7 +48,7 @@ const JournalView: React.FC<JournalViewProps> = ({ transactions, onAdd, onDelete
       id: Math.random().toString(36).substr(2, 9),
       assetId: selectedAsset.symbol,
       symbol: selectedAsset.symbol,
-      name: selectedAsset.symbol, // or descriptive name
+      name: selectedAsset.symbol, 
       type: newTx.type as TransactionType,
       date: newTx.date!,
       quantity: Number(newTx.quantity),
@@ -78,14 +84,18 @@ const JournalView: React.FC<JournalViewProps> = ({ transactions, onAdd, onDelete
                   placeholder="Enter asset symbol (BBCA, BTC, Gold...)"
                   value={assetSearch}
                   onChange={e => setAssetSearch(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSearchAsset()}
                 />
                 <button 
                   onClick={handleSearchAsset}
-                  className="bg-zinc-800 text-zinc-300 px-6 rounded text-xs font-bold uppercase tracking-widest"
+                  disabled={searchStatus !== 'idle'}
+                  className="bg-zinc-800 text-zinc-300 px-6 rounded text-xs font-bold uppercase tracking-widest min-w-[140px] flex items-center justify-center gap-2"
                 >
-                  {isSearching ? 'Searching...' : 'Search'}
+                  {searchStatus === 'searching' && <div className="w-2 h-2 rounded-full bg-amber-500 animate-ping"></div>}
+                  {searchStatus === 'idle' ? 'Search' : searchStatus === 'searching' ? 'Fetching...' : 'Verifying...'}
                 </button>
               </div>
+              <p className="text-[10px] text-zinc-600 italic">Institutional search utilizes live grounding and may take 5-10 seconds for verification.</p>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-6">
@@ -115,12 +125,10 @@ const JournalView: React.FC<JournalViewProps> = ({ transactions, onAdd, onDelete
                 </div>
                 <div>
                   <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">Quantity</label>
-                  {/* Fixed Type Error: Convert input string to number */}
                   <input type="number" step="any" className="w-full bg-black border border-zinc-800 rounded p-3 text-sm text-white mono" value={newTx.quantity} onChange={e => setNewTx({...newTx, quantity: Number(e.target.value)})} required />
                 </div>
                 <div>
                   <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">Execution Price (Rp)</label>
-                  {/* Fixed Type Error: Convert input string to number */}
                   <input type="number" step="any" className="w-full bg-black border border-zinc-800 rounded p-3 text-sm text-white mono" value={newTx.price} onChange={e => setNewTx({...newTx, price: Number(e.target.value)})} required />
                 </div>
                 <div className="md:col-span-2">

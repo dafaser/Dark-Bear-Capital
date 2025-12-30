@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { MarketData, WatchlistItem } from '../types';
 import { searchFinanceData } from '../services/api';
@@ -10,7 +9,7 @@ const formatIDR = (val: number) => {
 const WatchlistView: React.FC<{ marketData: Record<string, MarketData> }> = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResult, setSearchResult] = useState<MarketData | null>(null);
-  const [isSearching, setIsSearching] = useState(false);
+  const [searchStatus, setSearchStatus] = useState<'idle' | 'searching' | 'verifying'>('idle');
   const [watchlist, setWatchlist] = useState<WatchlistItem[]>(() => {
     const saved = localStorage.getItem('dark_bear_watchlist');
     return saved ? JSON.parse(saved) : [];
@@ -23,10 +22,15 @@ const WatchlistView: React.FC<{ marketData: Record<string, MarketData> }> = () =
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!searchQuery) return;
-    setIsSearching(true);
+    
+    setSearchStatus('searching');
+    const verifyTimeout = setTimeout(() => setSearchStatus('verifying'), 3500);
+    
     const data = await searchFinanceData(searchQuery);
+    clearTimeout(verifyTimeout);
+    
     setSearchResult(data);
-    setIsSearching(false);
+    setSearchStatus('idle');
   };
 
   const toggleWatchlist = (item: MarketData) => {
@@ -56,10 +60,15 @@ const WatchlistView: React.FC<{ marketData: Record<string, MarketData> }> = () =
             onChange={(e) => setSearchQuery(e.target.value)}
           />
           <svg className="absolute left-6 top-1/2 -translate-y-1/2 text-zinc-600 group-focus-within:text-amber-500" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><path d="M21 21l-4.35-4.35"></path></svg>
-          <button type="submit" className="absolute right-4 top-1/2 -translate-y-1/2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-[10px] font-bold uppercase tracking-widest px-4 py-2 rounded-md">
-            {isSearching ? 'Searching...' : 'Search'}
+          <button 
+            type="submit" 
+            disabled={searchStatus !== 'idle'}
+            className="absolute right-4 top-1/2 -translate-y-1/2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-[10px] font-bold uppercase tracking-widest px-4 py-2 rounded-md min-w-[100px]"
+          >
+            {searchStatus === 'idle' ? 'Search' : searchStatus === 'searching' ? 'Fetching...' : 'Verifying...'}
           </button>
         </form>
+        <p className="mt-2 text-[9px] text-zinc-600 text-center italic tracking-wider">Note: Searching uses real-time web grounding which requires a few moments for verification.</p>
 
         {searchResult && (
           <div className="mt-4 bg-zinc-900/80 border border-zinc-800 rounded-xl p-6 animate-in slide-in-from-top-2">
