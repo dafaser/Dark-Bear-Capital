@@ -7,28 +7,40 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange }) => {
   const menuItems: { id: 'dashboard' | 'portfolio' | 'watchlist' | 'journal' | 'analytics'; label: string; icon: React.ReactNode }[] = [
-    { id: 'dashboard', label: 'Overview', icon: <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /> },
-    { id: 'portfolio', label: 'Portfolio', icon: <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" /> },
-    { id: 'watchlist', label: 'Watchlist', icon: <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2zM22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" /> },
+    { 
+      id: 'dashboard', 
+      label: 'Overview', 
+      icon: <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /> 
+    },
+    { 
+      id: 'portfolio', 
+      label: 'Portfolio', 
+      icon: <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" /> 
+    },
+    { 
+      id: 'watchlist', 
+      label: 'Watchlist', 
+      icon: <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2zM22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" /> 
+    },
     { 
       id: 'journal', 
       label: 'Journal', 
       icon: (
-        <React.Fragment>
+        <g>
           <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
           <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-        </React.Fragment>
+        </g>
       )
     },
     { 
       id: 'analytics', 
       label: 'Analytics', 
       icon: (
-        <React.Fragment>
+        <g>
           <path d="M18 20V10" />
           <path d="M12 20V4" />
           <path d="M6 20v-6" />
-        </React.Fragment>
+        </g>
       )
     },
   ];
@@ -40,7 +52,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange }) => {
           <div className="w-8 h-8 bg-white flex items-center justify-center rounded-sm">
              <span className="text-black font-black text-xl italic leading-none">B</span>
           </div>
-          <span className="text-xl font-bold text-white tracking-tighter">DARK BEAR <span className="font-light text-zinc-500">CAPITAL</span></span>
+          <span className="text-xl font-bold text-white tracking-tighter uppercase">Dark Bear <span className="font-light text-zinc-500">Capital</span></span>
         </div>
         <p className="text-[10px] text-zinc-600 font-bold uppercase tracking-[0.2em]">Risk-Aware Institutional Growth</p>
       </div>
@@ -77,8 +89,8 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange }) => {
 
       <div className="mt-auto pt-6 border-t border-zinc-900">
         <div className="bg-zinc-900/50 rounded-lg p-4 border border-zinc-800">
-          <p className="text-[10px] text-zinc-500 font-bold uppercase mb-2">Strategy Note</p>
-          <p className="text-xs text-zinc-400 italic leading-relaxed">
+          <p className="text-[10px] text-zinc-500 font-bold uppercase mb-2 text-left">Strategy Note</p>
+          <p className="text-xs text-zinc-400 italic leading-relaxed text-left">
             "The goal isn't to be right. The goal is to survive being wrong."
           </p>
         </div>
